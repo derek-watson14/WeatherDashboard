@@ -1,0 +1,52 @@
+body {
+  min-height: 100vh;
+}
+a {
+  font-size: 1.1rem;
+}
+.col,
+.row {
+  margin: 0px;
+}
+
+.header {
+  display: flex;
+  justify-content: center;
+}
+.header h4 {
+  margin: 15px 0px;
+}
+.main-area {
+  height: 91vh;
+}
+.search-btn {
+  margin-top: 19px;
+}
+.search-row {
+  margin-bottom: 10px;
+}
+.search-title {
+  font-size: 1.5rem;
+}
+.weather-display {
+  padding-right: 0px !important;
+}
+.current-weather {
+  margin: 15px 0px 30px 15px;
+  padding: 10px 0px 10px 30px;
+  border-top: 1px solid #9e9e9e;
+  border-left: 1px solid #9e9e9e;
+  border-bottom: 1px solid #9e9e9e;
+}
+.forecast {
+  margin-left: 15px;
+}
+.day-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.card {
+  margin: 10px;
+}
