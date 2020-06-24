@@ -19,7 +19,7 @@ a {
 .main-area {
   height: 91vh;
 }
-.search-btn {
+#search-btn {
   margin-top: 19px;
 }
 .search-row {
@@ -49,4 +49,7 @@ a {
 }
 .card {
   margin: 10px;
+}
+.collection-item:hover {
+  cursor: pointer;
 }
