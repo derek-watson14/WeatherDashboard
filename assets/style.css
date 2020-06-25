@@ -16,9 +16,6 @@ a {
 .header h4 {
   margin: 15px 0px;
 }
-.main-area {
-  height: 91vh;
-}
 #search-btn {
   margin-top: 19px;
 }
@@ -52,4 +49,7 @@ a {
 }
 .collection-item:hover {
   cursor: pointer;
+}
+#clear-history strong {
+  color: crimson;
 }

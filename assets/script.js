@@ -1,31 +1,61 @@
-// Sample API call: api.openweathermap.org/data/2.5/weather?q=London,uk&APPID=86170c5f8394ef98b050c629516377aa
-var city = "";
+// Global Variables
 var apiKey = "86170c5f8394ef98b050c629516377aa";
-var searchHistory = [];
+var city = "";
+var searchHistory;
 
-const wait = (amount = 0) =>
-  new Promise((resolve) => setTimeout(resolve, amount));
-
+// Utility Functions
 function formatDate(date) {
   var parts = date.split("-");
   return `${parts[1]}/${parts[2]}/${parts[0]}`;
 }
-
-function createCurrentSection(data) {
-  $("#curr-city").html(
-    `${data.city} ${data.date} <img src=${data.icon} style="display: inline; width: 35px;" />`
-  );
-  $("#curr-temp").text(data.temp);
-  $("#curr-humid").text(data.humidity);
-  $("#curr-wind").text(data.wind);
-  getUVIndex(data.coord);
+function prettifyCityName(name) {
+  return name
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
 }
 
+// Search History / Local Storage
+function setSearchHistory() {
+  var localHistory = localStorage.getItem("searchHistory");
+  if (!localHistory) {
+    searchHistory = [];
+    localStorage.setItem("searchHistory", JSON.stringify(searchHistory));
+  } else {
+    searchHistory = JSON.parse(localHistory);
+  }
+}
+function addToSearchHistory(city) {
+  var formattedName = prettifyCityName(city);
+  if (!searchHistory.includes(formattedName)) {
+    searchHistory.push(formattedName);
+    localStorage.setItem("searchHistory", JSON.stringify(searchHistory));
+  }
+}
+function clearSearchHistory() {
+  searchHistory = [];
+  localStorage.setItem("searchHistory", JSON.stringify(searchHistory));
+}
+function displaySearchHistory() {
+  searchHistory.forEach((city) => {
+    $("<a>")
+      .addClass("history-item collection-item grey-text text-darken-4")
+      .text(city)
+      .prependTo("#search-history");
+  });
+}
+
+// Getting and displaying weather info
+function displayAllWeather(city) {
+  displayCurrentWeather(city);
+  displayWeatherForecast(city);
+}
 function displayCurrentWeather(city) {
   $.ajax({
     url: `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=imperial`,
     method: "GET",
-  }).then(function ({ name, main, coord, wind, weather }) {
+  }).then(function (res) {
+    var { name, main, coord, wind, weather } = res;
     var data = {
       city: name,
       date: `(${new Date(Date.now()).toLocaleString().split(",")[0]})`,
@@ -38,19 +68,28 @@ function displayCurrentWeather(city) {
     createCurrentSection(data);
   });
 }
-
-function createDayCard(day) {
-  var card = $("<div>").addClass("card teal lighten-1");
-  var cardContent = $("<div>").addClass("card-content white-text");
-  var date = $("<h6>").text(day.date);
-  var icon = $("<img>").attr("src", day.icon).attr("style", "width: 40px;");
-  var temp = $("<p>").text(day.temp);
-  var humid = $("<p>").text(day.humidity);
-  card
-    .append(cardContent.append(date, icon, temp, humid))
-    .appendTo($(".day-container"));
+function createCurrentSection(data) {
+  $("#curr-city").html(
+    `${data.city} ${data.date} <img src=${data.icon} style="display: inline; width: 35px;" />`
+  );
+  $("#curr-temp").text(data.temp);
+  $("#curr-humid").text(data.humidity);
+  $("#curr-wind").text(data.wind);
+  displayUVIndex(data.coord);
 }
-
+function displayUVIndex({ lat, lon }) {
+  var uvs = ["green", "#ADFF2F", "gold", "orange", "#FF4500", "red", "darkred"];
+  $.ajax({
+    url: `https://api.openweathermap.org/data/2.5/uvi?lat=${lat}&lon=${lon}&appid=${apiKey}`,
+    method: "GET",
+  }).then(function ({ value }) {
+    var color = `${uvs[Math.floor((value / 14) * 7) - 1]}`;
+    var valDisplay = $("<span>")
+      .text(value)
+      .css({ backgroundColor: color, padding: "3px" });
+    $("#curr-uv").text(`UV Index: `).append(valDisplay);
+  });
+}
 function displayWeatherForecast(city) {
   $.ajax({
     url: `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=imperial`,
@@ -58,7 +97,9 @@ function displayWeatherForecast(city) {
   }).then(function ({ list }) {
     var days = [];
     var dayCounter = 0;
-    for (var i = 2; i < 40; i += 8) {
+    // each item is a 3 hour step, 8 in a day
+    // starting at 3 and adding 8 will produce each day at noon
+    for (var i = 3; i < 40; i += 8) {
       var { main, weather, dt_txt } = list[i];
       days[dayCounter] = {
         temp: `Temp: ${main.temp} °F`,
@@ -71,68 +112,59 @@ function displayWeatherForecast(city) {
     }
   });
 }
-
-function getUVIndex({ lat, lon }) {
-  $.ajax({
-    url: `https://api.openweathermap.org/data/2.5/uvi?lat=${lat}&lon=${lon}&appid=${apiKey}`,
-    method: "GET",
-  }).then(function ({ value }) {
-    $("#curr-uv").text(`UV Index: ${value}`);
-  });
+function createDayCard(day) {
+  var card = $("<div>").addClass("card teal lighten-1");
+  var cardContent = $("<div>").addClass("card-content white-text");
+  var date = $("<h6>").text(day.date);
+  var icon = $("<img>").attr("src", day.icon).attr("style", "width: 40px;");
+  var temp = $("<p>").text(day.temp);
+  var humid = $("<p>").text(day.humidity);
+  card
+    .append(cardContent.append(date, icon, temp, humid))
+    .appendTo($(".day-container"));
 }
-
 function clearDispalys() {
   $("#search-history").empty();
   $(".day-container").empty();
-  $("#curr-city").empty();
+  $("#curr-city").text("Nothing to display");
   $("#curr-temp").empty();
   $("#curr-humid").empty();
   $("#curr-wind").empty();
   $("#curr-uv").empty();
 }
 
-function prettifyCityName(name) {
-  return name
-    .split(" ")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(" ");
-}
-
-function displaySearchHistory() {
-  searchHistory.forEach((city) => {
-    $("<a>")
-      .addClass("collection-item grey-text text-darken-4")
-      .text(city)
-      .appendTo("#search-history");
-  });
-}
-
-function addToSearchHistory(city) {
-  var formattedName = prettifyCityName(city);
-  if (!searchHistory.includes(formattedName)) {
-    searchHistory.push(formattedName);
+// Running the program
+function init() {
+  setSearchHistory();
+  displaySearchHistory();
+  var newestSearch = searchHistory[searchHistory.length - 1];
+  if (newestSearch) {
+    displayAllWeather(newestSearch);
   }
 }
-
-async function searchCity(city) {
+function searchCity(city) {
   addToSearchHistory(city);
   clearDispalys();
   displaySearchHistory();
-  displayCurrentWeather(city);
-  displayWeatherForecast(city);
+  displayAllWeather(city);
 }
 
+// Listeners
 $("#search-btn").click(function () {
   var city = $("#city-search").val();
   searchCity(city);
+  $("#city-search").val("");
 });
 
-$(document).on("click", ".collection-item", function () {
+$(document).on("click", ".history-item", function () {
   searchCity(this.textContent);
 });
 
-// searchCity("seattle");
+$("#clear-history").click(function () {
+  clearSearchHistory();
+  clearDispalys();
+  displaySearchHistory();
+});
 
-// ! TODO:
-// * Local Storage
-// * Value when seearh returns nothing
+// Start Program
+init();
