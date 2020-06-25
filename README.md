@@ -45,4 +45,4 @@ THEN I am presented with the last searched city forecast
 
 ## Screenshot:
 
-![Project Screenshot](Screenshots/dash.png)
+![Project Screenshot](screenshots/dash.png)
